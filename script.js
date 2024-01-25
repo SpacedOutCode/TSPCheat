@@ -1,6 +1,6 @@
 (() => {
   async function fetchAnswer() {
-    const KEY = "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";
+    const KEY = "key";
     const directions = document.getElementById("directions").innerText;
     const question = document.getElementById("question").innerText;
     const answers = document.getElementsByClassName("answer-option");
