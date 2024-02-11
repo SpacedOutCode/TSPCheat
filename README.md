@@ -2,7 +2,7 @@
 A tool I made to auto solve Townsend Press questions.
 
 # WARNING
-This project is still very much work in progress. It will be updated whenever. The multiple choice option may not work. If so, wait for a new update.
+This project is still a work in progress. It will be updated when a fix is needed. The multiple choice option may not work. If so, wait for a new update.
 </br>
 </br>
 ![Screenshot](ss.png)
@@ -17,7 +17,7 @@ This project is still very much work in progress. It will be updated whenever. T
 * Copy the entirety off the javascript function and create a bookmark
 * Paste this into the page area and title the page anything you want.
 
-```javascript:var%20script=document.createElement('script');script.src="REPLACE WITH THE GITHUB RAW URL YOU JUST COPIED";script.type="text/javascript";document.body.appendChild(script);```
+```javascript:(function(){document.body.appendChild(document.createElement('script')).src='PASTE RAW URL HERE';})();```
 
 * Open TownsendPress and click on the newly created bookmarklet
 * Enjoy!
