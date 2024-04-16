@@ -123,6 +123,44 @@ async function FetchAnswer() {
 }
 
 /**
+ * Sends a rating of an answer to the OpenAI chat API for constant improve ment of bot.
+ *
+ * @param {string} comment - The comment describing the rating of the answer.
+ * @param {string} explanation - The explanation for the rating of the answer.
+ */
+async function rateAnswer(comment, explanation) {
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: `The following is a rating of your answers to the question above. Please use this information to improve your future answers.\n Rating: \n${comment}\n${explanation}` }],
+        temperature: 0.7,
+        top_p: 0.7,
+        n: 1,
+        stream: false,
+        presence_penalty: 0,
+        frequency_penalty: 0,
+      }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      const msgAnswer = data.choices[0].message.content;
+      console.log(msgAnswer);
+    } else {
+      alert("Error: Unable to process your request.");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Error: Unable to process your request.");
+  }
+}
+
+/**
  * This function takes an answer and performs apply the changes to the TSP servers to submit the answer
  *
  * @param {string} answer - The answer to be processed.
@@ -132,10 +170,13 @@ function Answer(answer) {
   let answ = answer.toLowerCase();
   const type = getQuestionType();
   if (type == "single") {
-      CQ.doPageCallback("answer", answ.charAt(0), {});
-      setTimeout(() => {
-        CQ.doPageCallback("continue", "", { scrollTop: 0 });
-      }, 3500);
+    CQ.doPageCallback("answer", answ.charAt(0), {});
+    setTimeout(() => {
+      if(document.querySelector("#incorrect_response")) {
+        rateAnswer(document.querySelector(".comment").innerText.replace("Lars", ""), document.querySelector(".explanation").innerText)
+      }
+      CQ.doPageCallback("continue", "", {});
+    }, 3500)
   } else if(type == "double") {
     let answers = answ.split(", ", 2)
     let options = answersText.split(" ")
@@ -145,9 +186,12 @@ function Answer(answer) {
       }
     }
     CQ.doPageCallback("answer", "", {});
-      setTimeout(() => {
-        CQ.doPageCallback("continue", "", { scrollTop: 0 });
-      }, 3500);
+    setTimeout(() => {
+      if(document.querySelector("#incorrect_response")) {
+        rateAnswer(document.querySelector(".comment").innerText.replace("Lars", ""), document.querySelector(".explanation").innerText)
+      }
+      CQ.doPageCallback("continue", "", {});
+    }, 3500)
   } else if (type == "multi") {
     let answers = answ.split(", ", 10)
     let options = answersText.split(" ")
@@ -157,9 +201,12 @@ function Answer(answer) {
       }
     }
     CQ.doPageCallback("answer", "", {});
-      setTimeout(() => {
-        CQ.doPageCallback("continue", "", { scrollTop: 0 });
-      }, 3500);
+    setTimeout(() => {
+      if(document.querySelector("#incorrect_response")) {
+        rateAnswer(document.querySelector(".comment").innerText.replace("Lars", ""), document.querySelector(".explanation").innerText)
+      }
+      CQ.doPageCallback("continue", "", {});
+    }, 3500)
   }
 }
 
