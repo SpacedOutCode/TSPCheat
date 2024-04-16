@@ -128,7 +128,7 @@ async function FetchAnswer() {
  * @param {string} comment - The comment describing the rating of the answer.
  * @param {string} explanation - The explanation for the rating of the answer.
  */
-async function rateAnswer(comment, explanation) {
+async function rateAnswer(comment, explanation, ques, answer) {
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -138,7 +138,7 @@ async function rateAnswer(comment, explanation) {
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: `The following is a rating of your answers to the question above. Please use this information to improve your future answers.\n Rating: \n${comment}\n${explanation}` }],
+        messages: [{ role: "user", content: `The following is a rating of your answers to previous question which will be provided below. Please use this information to improve your future answers.\n The question and your answer: \n question: \n${ques} \n Answer: \n${answer} Rating: \n${comment}\n${explanation}` }],
         temperature: 0.7,
         top_p: 0.7,
         n: 1,
@@ -172,9 +172,6 @@ function Answer(answer) {
   if (type == "single") {
     CQ.doPageCallback("answer", answ.charAt(0), {});
     setTimeout(() => {
-      if(document.querySelector("#incorrect_response")) {
-        rateAnswer(document.querySelector(".comment").innerText.replace("Lars", ""), document.querySelector(".explanation").innerText)
-      }
       CQ.doPageCallback("continue", "", {});
     }, 3500)
   } else if(type == "double") {
@@ -187,9 +184,6 @@ function Answer(answer) {
     }
     CQ.doPageCallback("answer", "", {});
     setTimeout(() => {
-      if(document.querySelector("#incorrect_response")) {
-        rateAnswer(document.querySelector(".comment").innerText.replace("Lars", ""), document.querySelector(".explanation").innerText)
-      }
       CQ.doPageCallback("continue", "", {});
     }, 3500)
   } else if (type == "multi") {
@@ -202,9 +196,6 @@ function Answer(answer) {
     }
     CQ.doPageCallback("answer", "", {});
     setTimeout(() => {
-      if(document.querySelector("#incorrect_response")) {
-        rateAnswer(document.querySelector(".comment").innerText.replace("Lars", ""), document.querySelector(".explanation").innerText)
-      }
       CQ.doPageCallback("continue", "", {});
     }, 3500)
   }
