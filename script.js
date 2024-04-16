@@ -4,7 +4,7 @@ const types = ["single", "double", "multi", "antonym", "synonym"];
 const questionPrompt = [
   "disregard",
   "Disregard all prior instructions. Use the text below to fill in the two blank spots with the words provided after the text. DO NOT use the same word twice and only use words that make the most sense in the context around the blank . Only return the words in order separated by a comma, NO OTHER WORDS OR CHARACTERS. Suffixes are allowed to make more sense but DO NOT change any words completely.",
-  "Disregard all prior instructions. Use the text below to fill in the numbered spots with the words provided after the text. Only use each word once and use the word that makes the most sense in the context around its blank. Only Return the words in the order they go in separated by a comma. Suffixes are allowed to make more sense but DO NOT change any words completely.",
+  "Disregard all prior instructions. Use the text below to fill in the numbered spots with the words provided after the text. Only use each word once and use the word that makes the most sense in the context around its blank. Only Return the words in the order they go in separated by a comma. Suffixes are NOT allowed and DO NOT change any words completely.",
 ];
 let answersText = "";
 
@@ -51,9 +51,10 @@ function getQuestionType() {
   if (question.innerText.includes("Choose the words that best complete")) {
     type = types[2];
     let options = Array.from(document.getElementsByTagName("option"))
+    answersText = options[1].innerText
     options = options.slice(2, 11)
     options.forEach(option => {
-      answersText = answersText  + " " + option.innerText;
+      answersText = `${answersText} ${option.innerText}`
     })
   }
   return type;
@@ -71,6 +72,7 @@ function buildPrompt() {
   const context = document.querySelector("#directions").innerText;
   const question = document.querySelector("#question").innerText;
   const removeoptions = answersText.replaceAll("\n", " ")
+  const addoptions = answersText.replaceAll(" ", "\n")
   if (type == "single") { 
     builtPrompt =
       context.replace("Directions", "Directions for the following question are as follows:") +
@@ -80,7 +82,7 @@ function buildPrompt() {
   } else if (type == "double") {
     builtPrompt = prompt + "Text:" + question.replace(removeoptions, "____") + "Answer options:" + answersText;
   } else if (type == "multi") {
-    builtPrompt = prompt + " " + "Text: " + context + "Words:" + answersText;
+    builtPrompt = prompt + " " + "Text: " + question.replaceAll("\n" + addoptions + "\n", "____") + " Words:" + answersText;
   }
   return builtPrompt;
 }
