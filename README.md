@@ -5,7 +5,8 @@ A tool I made to auto-solve Townsend Press questions.
 This project is still a work in progress. It will be updated when a fix is needed. The multiple-choice option may not work well. If so, wait for a new update.
 </br>
 </br>
-![Screenshot](ss.png)
+![screenshot](https://github.com/SpacedOutCode/TSPCheat/assets/91917326/771fdd1a-0ecd-4527-8a12-04e872f4cf4f)
+
 
 # How to Use
 ## Text Tutorial:
