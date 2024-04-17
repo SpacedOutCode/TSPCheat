@@ -4,9 +4,10 @@ const types = ["single", "double", "multi", "antonym", "synonym"];
 const questionPrompt = [
   "disregard",
   "Disregard all prior instructions. Use the text below to fill in the two blank spots with the words provided after the text. DO NOT use the same word twice and only use words that make the most sense in the context around the blank . Only return the words in order separated by a comma, NO OTHER WORDS OR CHARACTERS. Suffixes are allowed to make more sense but DO NOT change any words completely.",
-  "Disregard all prior instructions. Use the text below to fill in the numbered spots with the words provided after the text. Only use each word once and use the word that makes the most sense in the context around its blank. Only Return the words in the order they go in separated by a comma. Suffixes are NOT allowed and DO NOT change any words completely.",
+  "Disregard all prior instructions. Use the text below to fill in the numbered spots with the words provided after the text. Only use each word once and use the word that makes the most sense in the context around its blank. Only Return the words in the order they go in separated by a comma and NO OTHER WORDS OR CHARACTERS AND DO NOT NUMBER THE WORDS AND DO NOT USE ANY PTHER WORDS THAN THE WORDS GIVEN. Suffixes are NOT allowed and DO NOT change any words completely.",
 ];
 let answersText = "";
+let correct, incorrect, singlesCorrect, singlesIncorrect, doublesCorrect, doublesIncorrect, multiplesCorrect, multiplesIncorrect = 0
 
 /**
  * Attaches the script and creates a button to fetch the answer.
@@ -43,9 +44,10 @@ function getQuestionType() {
   if (question.innerText.includes("Select the two words")) {
     type = types[1];
     let options = Array.from(document.getElementsByTagName("option"))
+    answersText = options[1].innerText
     options = options.slice(2, 11)
     options.forEach(option => {
-      answersText = answersText  + " " + option.innerText;
+      answersText = `${answersText} ${option.innerText}`
     })
   }
   if (question.innerText.includes("Choose the words that best complete")) {
@@ -101,8 +103,8 @@ async function FetchAnswer() {
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
         messages: [{ role: "user", content: chatMsg }],
-        temperature: 0.7,
-        top_p: 0.7,
+        temperature: 0.5,
+        top_p: 1,
         n: 1,
         stream: false,
         presence_penalty: 0,
@@ -113,44 +115,6 @@ async function FetchAnswer() {
       const data = await response.json();
       const msgAnswer = data.choices[0].message.content;
       Answer(msgAnswer)
-    } else {
-      alert("Error: Unable to process your request.");
-    }
-  } catch (error) {
-    console.error(error);
-    alert("Error: Unable to process your request.");
-  }
-}
-
-/**
- * Sends a rating of an answer to the OpenAI chat API for constant improve ment of bot.
- *
- * @param {string} comment - The comment describing the rating of the answer.
- * @param {string} explanation - The explanation for the rating of the answer.
- */
-async function rateAnswer(comment, explanation, ques, answer) {
-  try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: `The following is a rating of your answers to previous question which will be provided below. Please use this information to improve your future answers.\n The question and your answer: \n question: \n${ques} \n Answer: \n${answer} Rating: \n${comment}\n${explanation}` }],
-        temperature: 0.7,
-        top_p: 0.7,
-        n: 1,
-        stream: false,
-        presence_penalty: 0,
-        frequency_penalty: 0,
-      }),
-    });
-    if (response.ok) {
-      const data = await response.json();
-      const msgAnswer = data.choices[0].message.content;
-      console.log(msgAnswer);
     } else {
       alert("Error: Unable to process your request.");
     }
@@ -172,6 +136,8 @@ function Answer(answer) {
   if (type == "single") {
     CQ.doPageCallback("answer", answ.charAt(0), {});
     setTimeout(() => {
+      document.querySelector('#incorrect_response') && (console.log("Incorrect"), incorrect++, singlesIncorrect++);
+      document.querySelector('#correct_response') && (correct++, console.log("Correct"), singlesCorrect++);
       CQ.doPageCallback("continue", "", {});
     }, 3500)
   } else if(type == "double") {
@@ -184,6 +150,8 @@ function Answer(answer) {
     }
     CQ.doPageCallback("answer", "", {});
     setTimeout(() => {
+      document.querySelector('#incorrect_response') && (console.log("Incorrect"), incorrect++, doublesIncorrect++);
+      document.querySelector('#correct_response') && (correct++, console.log("Correct"), doublesCorrect++);
       CQ.doPageCallback("continue", "", {});
     }, 3500)
   } else if (type == "multi") {
@@ -196,10 +164,35 @@ function Answer(answer) {
     }
     CQ.doPageCallback("answer", "", {});
     setTimeout(() => {
+      document.querySelector('#incorrect_response') && (console.log("Incorrect"), incorrect++, multiplesIncorrect++);
+      document.querySelector('#correct_response') && (correct++, console.log("Correct"), multiplesCorrect++);
       CQ.doPageCallback("continue", "", {});
     }, 3500)
   }
 }
+
+/**
+ * Generates a file containing the percentages of correct and incorrect answers. This is used for analysis  and to provide accuracy stats on the repo.
+ */
+ function getPercentages() {
+  const fileContent = `Overall:\n\nCorrect answers: ${correct}\nIncorrect answers: ${incorrect}\nAccuracy: ${(correct / (correct + incorrect)) * 100}%\n\nSingles:\n\nCorrect: ${singlesCorrect}\nIncorrect: ${singlesIncorrect}\nAccuracy: ${(singlesCorrect / (singlesCorrect + singlesIncorrect)) * 100}%\n\nDoubles:\n\nCorrect: ${doublesCorrect}\nIncorrect: ${doublesIncorrect}\nAccuracy: ${(doublesCorrect / (doublesCorrect + doublesIncorrect)) * 100}%\n\nMultiples:\nCorrect: ${multiplesCorrect}\nIncorrect: ${multiplesIncorrect}\nAccuracy: ${(multiplesCorrect / (multiplesCorrect + multiplesIncorrect)) * 100}%`;
+
+  const blob = new Blob([fileContent], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'results.txt';
+  link.style.display = 'none';
+
+  document.body.appendChild(link);
+  link.click();
+
+  setTimeout(() => {
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, 100);
+ }
 
 builder();
 })();
