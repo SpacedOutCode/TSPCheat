@@ -2,12 +2,21 @@
   const KEY = ""; /*Your open AI key here*/
 const types = ["single", "double", "multi", "antonym", "synonym"];
 const questionPrompt = [
-  "disregard",
-  "Disregard all prior instructions. Use the text below to fill in the two blank spots with the words provided after the text. DO NOT use the same word twice and only use words that make the most sense in the context around the blank . Only return the words in order separated by a comma, NO OTHER WORDS OR CHARACTERS. Suffixes are allowed to make more sense but DO NOT change any words completely.",
+  "\nThe answer choices are as follows. Please choose only the letter associated with the answer and please keep it to one character: \n",
   "Disregard all prior instructions. Use the text below to fill in the numbered spots with the words provided after the text. Only use each word once and use the word that makes the most sense in the context around its blank. Only Return the words in the order they go in separated by a comma and NO OTHER WORDS OR CHARACTERS AND DO NOT NUMBER THE WORDS AND DO NOT USE ANY PTHER WORDS THAN THE WORDS GIVEN. Suffixes are NOT allowed and DO NOT change any words completely.",
+  "Disregard all prior instructions. Use the text below to fill in the numbered spots with the words provided after the text. Only use each word once and use the word that makes the most sense in the context around its blank. Only Return the words in the order they go in separated by a comma and NO OTHER WORDS OR CHARACTERS AND DO NOT NUMBER THE WORDS AND DO NOT USE ANY PTHER WORDS THAN THE WORDS GIVEN. Suffixes are NOT allowed and DO NOT change any words completely.",
+  "\nThe answer choices are as follows. Please choose only the letter associated with the answer and please keep it to one character: \n",
+  "\nThe answer choices are as follows. Please choose only the letter associated with the answer and please keep it to one character: \n",
 ];
 let answersText = "";
-let correct, incorrect, singlesCorrect, singlesIncorrect, doublesCorrect, doublesIncorrect, multiplesCorrect, multiplesIncorrect = 0
+let correct,
+  incorrect,
+  singlesCorrect,
+  singlesIncorrect,
+  doublesCorrect,
+  doublesIncorrect,
+  multiplesCorrect,
+  multiplesIncorrect = 0;
 
 /**
  * Attaches the script and creates a button to fetch the answer.
@@ -32,32 +41,76 @@ function builder() {
 function getQuestionType() {
   var type = "";
   const question = document.querySelector("#directions");
-  if (question.innerText.includes("Use context clues to choose") || question.innerText.includes("Click on the meaning closest to that of the boldfaced word") || question.innerText.includes("Click on the word that matches each definition.") || question.innerText.includes("Click on the word that best completes each sentence.")) {
+  if (
+    question.innerText.includes("Use context clues to choose") ||
+    question.innerText.includes(
+      "Click on the meaning closest to that of the boldfaced word"
+    ) ||
+    question.innerText.includes(
+      "Click the answer that is closest in meaning to the boldfaced word"
+    ) ||
+    question.innerText.includes(
+      "Click on the word that matches each definition."
+    ) ||
+    question.innerText.includes(
+      "Click on the word that best completes each sentence."
+    ) ||
+    question.innerText.includes("Choose the answer that best completes") ||
+    question.innerText.includes(
+      "Choose Correct if the boldfaced word is used correctly"
+    )
+  ) {
     type = types[0];
     let answers = document.getElementsByClassName("answer-option");
     let arry = Array.from(answers);
-    if (arry.length == 20) arry = arry.slice(10)
+    if (arry.length == 20) arry = arry.slice(10);
     for (i = 0; i < arry.length; i++) {
       answersText = answersText + " " + arry[i].innerText;
     }
   }
   if (question.innerText.includes("Select the two words")) {
     type = types[1];
-    let options = Array.from(document.getElementsByTagName("option"))
-    answersText = options[1].innerText
-    options = options.slice(2, 11)
-    options.forEach(option => {
-      answersText = `${answersText} ${option.innerText}`
-    })
+    let options = Array.from(document.getElementsByTagName("option"));
+    answersText = options[1].innerText;
+    options = options.slice(2, 11);
+    options.forEach((option) => {
+      answersText = `${answersText} ${option.innerText}`;
+    });
   }
   if (question.innerText.includes("Choose the words that best complete")) {
     type = types[2];
-    let options = Array.from(document.getElementsByTagName("option"))
-    answersText = options[1].innerText
-    options = options.slice(2, 11)
-    options.forEach(option => {
-      answersText = `${answersText} ${option.innerText}`
-    })
+    let options = Array.from(document.getElementsByTagName("option"));
+    answersText = options[1].innerText;
+    options = options.slice(2, 11);
+    options.forEach((option) => {
+      answersText = `${answersText} ${option.innerText}`;
+    });
+  }
+  if (
+    question.innerText.includes(
+      "Choose the answer that is most nearly opposite"
+    )
+  ) {
+    type = types[3];
+    let answers = document.getElementsByClassName("answer-option");
+    let arry = Array.from(answers);
+    if (arry.length == 8) arry = arry.slice(4);
+    for (i = 0; i < arry.length; i++) {
+      answersText = answersText + " " + arry[i].innerText;
+    }
+  }
+  if (
+    question.innerText.includes(
+      "Choose the answer that is most nearly the same"
+    )
+  ) {
+    type = types[4];
+    let answers = document.getElementsByClassName("answer-option");
+    let arry = Array.from(answers);
+    if (arry.length == 8) arry = arry.slice(4);
+    for (i = 0; i < arry.length; i++) {
+      answersText = answersText + " " + arry[i].innerText;
+    }
   }
   return type;
 }
@@ -73,18 +126,50 @@ function buildPrompt() {
   const prompt = questionPrompt[types.indexOf(type)];
   const context = document.querySelector("#directions").innerText;
   const question = document.querySelector("#question").innerText;
-  const removeoptions = answersText.replaceAll("\n", " ")
-  const addoptions = answersText.replaceAll(" ", "\n")
-  if (type == "single") { 
+  const removeoptions = answersText.replaceAll("\n", " ");
+  const addoptions = answersText.replaceAll(" ", "\n");
+  if (type == "single") {
     builtPrompt =
-      context.replace("Directions", "Directions for the following question are as follows:") +
-      question.replace('Question\n', "\n")  +
-      "\nThe answer choices are as follows. Please choose only the letter associated with the answer and please keep it to one character: \n" +
+      context.replace(
+        "Directions\n",
+        "Directions for the following question are as follows:"
+      ) +
+      question.replace("Question\n", "\n") +
+      prompt +
       answersText;
   } else if (type == "double") {
-    builtPrompt = prompt + "Text:" + question.replace(removeoptions, "____") + "Answer options:" + answersText;
+    builtPrompt =
+      prompt +
+      "Text:" +
+      question.replace(removeoptions, "____") +
+      "Answer options:" +
+      answersText;
   } else if (type == "multi") {
-    builtPrompt = prompt + " " + "Text: " + question.replaceAll("\n" + addoptions + "\n", "____") + " Words:" + answersText;
+    builtPrompt =
+      prompt +
+      " " +
+      "Text: " +
+      question.replaceAll("\n" + addoptions + "\n", "____") +
+      " Words:" +
+      answersText;
+  } else if (type == "antonym") {
+    builtPrompt =
+      context.replace(
+        "Directions\n",
+        "Directions for the following question are as follows:"
+      ) +
+      question.replace("Question\n", "\nThe word is:") +
+      prompt +
+      answersText;
+  } else if (type == "synonym") {
+    builtPrompt =
+      context.replace(
+        "Directions\n",
+        "Directions for the following question are as follows:"
+      ) +
+      question.replace("Question\n", "\nThe word is:") +
+      prompt +
+      answersText;
   }
   return builtPrompt;
 }
@@ -114,7 +199,7 @@ async function FetchAnswer() {
     if (response.ok) {
       const data = await response.json();
       const msgAnswer = data.choices[0].message.content;
-      Answer(msgAnswer)
+      Answer(msgAnswer);
     } else {
       alert("Error: Unable to process your request.");
     }
@@ -136,63 +221,50 @@ function Answer(answer) {
   if (type == "single") {
     CQ.doPageCallback("answer", answ.charAt(0), {});
     setTimeout(() => {
-      document.querySelector('#incorrect_response') && (console.log("Incorrect"), incorrect++, singlesIncorrect++);
-      document.querySelector('#correct_response') && (correct++, console.log("Correct"), singlesCorrect++);
+      document.querySelector("#incorrect_response") &&
+        (console.log("%cIncorrect", "color: #de3743"), incorrect++, singlesIncorrect++);
+      document.querySelector("#correct_response") &&
+        (correct++, console.log("%cCorrect", "color: #41d950"), singlesCorrect++);
       CQ.doPageCallback("continue", "", {});
-    }, 3500)
-  } else if(type == "double") {
-    let answers = answ.split(", ", 2)
-    let options = answersText.split(" ")
+    }, 3500);
+  } else if (type == "double") {
+    let answers = answ.split(", ", 2);
+    let options = answersText.split(" ");
     for (i = 0; i < answers.length; i++) {
-      if(options.indexOf(answers[i].toLowerCase()) != -1) {
-          document.getElementsByName("cloze[]")[i].value = options.indexOf(answers[i].toLowerCase())+1
+      if (options.indexOf(answers[i].toLowerCase()) != -1) {
+        document.getElementsByName("cloze[]")[i].value =
+          options.indexOf(answers[i].toLowerCase()) + 1;
       }
     }
-    CQ.doPageCallback("answer", "", {});
-    setTimeout(() => {
-      document.querySelector('#incorrect_response') && (console.log("Incorrect"), incorrect++, doublesIncorrect++);
-      document.querySelector('#correct_response') && (correct++, console.log("Correct"), doublesCorrect++);
-      CQ.doPageCallback("continue", "", {});
-    }, 3500)
   } else if (type == "multi") {
-    let answers = answ.split(", ", 10)
-    let options = answersText.split(" ")
+    let answers = answ.split(", ", 10);
+    let options = answersText.split(" ");
     for (i = 0; i < answers.length; i++) {
-      if(options.indexOf(answers[i].toLowerCase()) != -1) {
-          document.getElementsByName("cloze[]")[i].value = options.indexOf(answers[i].toLowerCase())+1
+      if (options.indexOf(answers[i].toLowerCase()) != -1) {
+        document.getElementsByName("cloze[]")[i].value =
+          options.indexOf(answers[i].toLowerCase()) + 1;
       }
     }
-    CQ.doPageCallback("answer", "", {});
+  } else if (type == "antonym") {
+    CQ.doPageCallback("answer", answ.charAt(0), {});
     setTimeout(() => {
-      document.querySelector('#incorrect_response') && (console.log("Incorrect"), incorrect++, multiplesIncorrect++);
-      document.querySelector('#correct_response') && (correct++, console.log("Correct"), multiplesCorrect++);
+      document.querySelector("#incorrect_response") &&
+        (console.log("%cIncorrect", "color: #de3743"), incorrect++, singlesIncorrect++);
+      document.querySelector("#correct_response") &&
+        (correct++, console.log("%cCorrect", "color: #41d950"), singlesCorrect++);
       CQ.doPageCallback("continue", "", {});
-    }, 3500)
+    }, 3500);
+  } else if (type == "synonym") {
+    CQ.doPageCallback("answer", answ.charAt(0), {});
+    setTimeout(() => {
+      document.querySelector("#incorrect_response") &&
+        (console.log("%cIncorrect", "color: #de3743"), incorrect++, singlesIncorrect++);
+      document.querySelector("#correct_response") &&
+        (correct++, console.log("%cCorrect", "color: #41d950"), singlesCorrect++);
+      CQ.doPageCallback("continue", "", {});
+    }, 3500);
   }
 }
-
-/**
- * Generates a file containing the percentages of correct and incorrect answers. This is used for analysis  and to provide accuracy stats on the repo.
- */
- function getPercentages() {
-  const fileContent = `Overall:\n\nCorrect answers: ${correct}\nIncorrect answers: ${incorrect}\nAccuracy: ${(correct / (correct + incorrect)) * 100}%\n\nSingles:\n\nCorrect: ${singlesCorrect}\nIncorrect: ${singlesIncorrect}\nAccuracy: ${(singlesCorrect / (singlesCorrect + singlesIncorrect)) * 100}%\n\nDoubles:\n\nCorrect: ${doublesCorrect}\nIncorrect: ${doublesIncorrect}\nAccuracy: ${(doublesCorrect / (doublesCorrect + doublesIncorrect)) * 100}%\n\nMultiples:\nCorrect: ${multiplesCorrect}\nIncorrect: ${multiplesIncorrect}\nAccuracy: ${(multiplesCorrect / (multiplesCorrect + multiplesIncorrect)) * 100}%`;
-
-  const blob = new Blob([fileContent], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'results.txt';
-  link.style.display = 'none';
-
-  document.body.appendChild(link);
-  link.click();
-
-  setTimeout(() => {
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, 100);
- }
 
 builder();
 })();
